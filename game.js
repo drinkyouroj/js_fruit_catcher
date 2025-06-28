@@ -9,7 +9,7 @@ const INITIAL_MAX_FRUIT_SPEED = 2; // Reduced initial speed
 const MAX_POSSIBLE_FRUIT_SPEED = 8; // Maximum possible speed after difficulty increases
 const INITIAL_SPAWN_INTERVAL = 2000; // Longer initial spawn interval (milliseconds)
 const MIN_SPAWN_INTERVAL = 500; // Minimum spawn interval after difficulty increases
-const DIFFICULTY_INCREASE_INTERVAL = 10000; // Increase difficulty every 10 seconds
+const DIFFICULTY_INCREASE_INTERVAL = 15000; // Increase difficulty every 15 seconds
 
 // Game variables
 let canvas, ctx;
