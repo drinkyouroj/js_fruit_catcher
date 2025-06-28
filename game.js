@@ -33,6 +33,14 @@ let currentMaxFruitSpeed = INITIAL_MAX_FRUIT_SPEED; // Current maximum fruit spe
 let currentSpawnInterval = INITIAL_SPAWN_INTERVAL; // Current spawn interval
 let difficultyLevel = 1; // Track difficulty level
 let heartImage = null; // Will hold the heart image
+let backgroundImage = null; // Will hold the background image
+let lastScoreTime = 0; // Track time for score updates
+
+// Audio elements
+let backgroundMusic = null;
+let catchSound = null;
+let missSound = null;
+let startSound = null;
 
 // Key state tracking
 let keys = {
@@ -64,11 +72,29 @@ window.onload = function() {
     heartImage = new Image();
     heartImage.src = 'assets/heart.png';
     
+    // Load background image
+    backgroundImage = new Image();
+    backgroundImage.src = 'assets/background.jpeg';
+    
     // Load fruit images
     fruitTypes.forEach(fruit => {
         fruit.image = new Image();
         fruit.image.src = `assets/${fruit.name}.png`;
     });
+    
+    // Load audio
+    backgroundMusic = new Audio('assets/music.mp3');
+    backgroundMusic.loop = true;
+    backgroundMusic.volume = 0.5;
+    
+    catchSound = new Audio('assets/catch.mp3');
+    catchSound.volume = 0.7;
+    
+    missSound = new Audio('assets/miss.mp3');
+    missSound.volume = 0.7;
+    
+    startSound = new Audio('assets/start.mp3');
+    startSound.volume = 0.8;
     
     // Set canvas dimensions
     resizeCanvas();
@@ -119,6 +145,7 @@ function startGame() {
     fruits = [];
     gameActive = true;
     gameTimer = 0; // Reset game timer
+    lastScoreTime = 0; // Reset score timer
     currentMaxFruitSpeed = INITIAL_MAX_FRUIT_SPEED; // Reset difficulty
     currentSpawnInterval = INITIAL_SPAWN_INTERVAL;
     difficultyLevel = 1;
@@ -137,6 +164,14 @@ function startGame() {
     cancelAnimationFrame(animationId);
     lastTime = performance.now();
     gameLoop(lastTime);
+    
+    // Play start sound
+    startSound.currentTime = 0;
+    startSound.play().catch(e => console.log("Audio play failed:", e));
+    
+    // Start background music
+    backgroundMusic.currentTime = 0;
+    backgroundMusic.play().catch(e => console.log("Audio play failed:", e));
 }
 
 // Game loop
@@ -149,8 +184,21 @@ function gameLoop(timestamp) {
     gameTimer += deltaTime;
     updateDifficulty();
     
+    // Add time-based points (every second)
+    if (gameTimer - lastScoreTime >= 1000) {
+        // Add points equal to current difficulty level
+        score += difficultyLevel;
+        document.getElementById('score').textContent = score;
+        lastScoreTime = gameTimer;
+    }
+    
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw background
+    if (backgroundImage && backgroundImage.complete) {
+        ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+    }
     
     // Update basket position based on key states
     updateBasketPosition(deltaTime);
@@ -271,6 +319,10 @@ function updateFruits(deltaTime) {
             score += fruit.type.points;
             document.getElementById('score').textContent = score;
             fruits.splice(i, 1);
+            
+            // Play catch sound
+            catchSound.currentTime = 0;
+            catchSound.play().catch(e => console.log("Audio play failed:", e));
         } 
         // Check if fruit is out of bounds
         else if (fruit.y > canvas.height) {
@@ -278,6 +330,10 @@ function updateFruits(deltaTime) {
             lives--;
             updateLivesDisplay();
             fruits.splice(i, 1);
+            
+            // Play miss sound
+            missSound.currentTime = 0;
+            missSound.play().catch(e => console.log("Audio play failed:", e));
             
             // Check for game over
             if (lives <= 0) {
@@ -372,4 +428,7 @@ function gameOver() {
     clearInterval(spawnTimer);
     document.getElementById('finalScore').textContent = score;
     document.getElementById('gameOverScreen').classList.remove('hidden');
+    
+    // Stop background music
+    backgroundMusic.pause();
 }
