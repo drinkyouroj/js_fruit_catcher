@@ -70,6 +70,9 @@ window.onload = function() {
     
     // Initialize basket position
     resetBasket();
+    
+    // Initialize lives display
+    updateLivesDisplay();
 };
 
 // Resize canvas to fit container
@@ -104,7 +107,7 @@ function startGame() {
     
     // Update UI
     document.getElementById('score').textContent = score;
-    document.getElementById('lives').textContent = lives;
+    updateLivesDisplay();
     document.getElementById('startScreen').classList.add('hidden');
     document.getElementById('gameOverScreen').classList.add('hidden');
     
@@ -244,7 +247,7 @@ function updateFruits(deltaTime) {
         else if (fruit.y > canvas.height) {
             // Missed fruit
             lives--;
-            document.getElementById('lives').textContent = lives;
+            updateLivesDisplay();
             fruits.splice(i, 1);
             
             // Check for game over
@@ -306,6 +309,19 @@ function keepBasketInBounds() {
         basket.x = 0;
     } else if (basket.x + basket.width > canvas.width) {
         basket.x = canvas.width - basket.width;
+    }
+}
+
+// Update lives display with heart icons
+function updateLivesDisplay() {
+    const livesContainer = document.getElementById('livesIcons');
+    livesContainer.innerHTML = '';
+    
+    // Create heart icons based on current lives
+    for (let i = 0; i < lives; i++) {
+        const heartIcon = document.createElement('div');
+        heartIcon.className = 'life-icon';
+        livesContainer.appendChild(heartIcon);
     }
 }
 
