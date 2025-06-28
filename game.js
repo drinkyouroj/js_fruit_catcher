@@ -200,20 +200,14 @@ function updateDifficulty() {
 function updateBasketPosition(deltaTime) {
     if (!gameActive) return;
     
-    // Normalize movement speed with deltaTime for consistent speed across different frame rates
     const moveAmount = basket.speed * (deltaTime / 16); // Normalize for 60fps
     
-    if (keys.ArrowLeft) {
+    // Horizontal movement
+    if (keys.ArrowLeft || keys.ArrowUp) { // Added ArrowUp for left movement
         basket.x -= moveAmount;
     }
-    if (keys.ArrowRight) {
+    if (keys.ArrowRight || keys.ArrowDown) { // Added ArrowDown for right movement
         basket.x += moveAmount;
-    }
-    if (keys.ArrowUp) {
-        basket.y -= moveAmount;
-    }
-    if (keys.ArrowDown) {
-        basket.y += moveAmount;
     }
     
     keepBasketInBounds();
@@ -306,7 +300,8 @@ function handleKeyDown(e) {
     if (!gameActive) return;
     
     // Update key state
-    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || 
+        e.key === 'ArrowUp' || e.key === 'ArrowDown') { // Added Up and Down arrows
         keys[e.key] = true;
         e.preventDefault(); // Prevent scrolling when using arrow keys
     }
@@ -314,7 +309,8 @@ function handleKeyDown(e) {
 
 // Handle key release
 function handleKeyUp(e) {
-    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || 
+        e.key === 'ArrowUp' || e.key === 'ArrowDown') { // Added Up and Down arrows
         keys[e.key] = false;
     }
 }
