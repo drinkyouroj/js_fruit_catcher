@@ -32,6 +32,7 @@ let gameTimer = 0; // Track total game time
 let currentMaxFruitSpeed = INITIAL_MAX_FRUIT_SPEED; // Current maximum fruit speed
 let currentSpawnInterval = INITIAL_SPAWN_INTERVAL; // Current spawn interval
 let difficultyLevel = 1; // Track difficulty level
+let heartImage = null; // Will hold the heart image
 
 // Key state tracking
 let keys = {
@@ -43,11 +44,11 @@ let keys = {
 
 // Fruit types with different point values
 const fruitTypes = [
-    { name: 'apple', points: 10, color: 'red' },
-    { name: 'orange', points: 15, color: 'orange' },
-    { name: 'banana', points: 20, color: 'yellow' },
-    { name: 'grape', points: 25, color: 'purple' },
-    { name: 'watermelon', points: 30, color: 'green' }
+    { name: 'apple', points: 10, color: 'red', image: null },
+    { name: 'orange', points: 15, color: 'orange', image: null },
+    { name: 'pear', points: 20, color: 'green', image: null },
+    { name: 'grapes', points: 25, color: 'purple', image: null },
+    { name: 'lemon', points: 30, color: 'yellow', image: null }
 ];
 
 // Initialize the game
@@ -58,6 +59,16 @@ window.onload = function() {
     // Load basket image
     basket.image = new Image();
     basket.image.src = 'assets/basket.png';
+    
+    // Load heart image
+    heartImage = new Image();
+    heartImage.src = 'assets/heart.png';
+    
+    // Load fruit images
+    fruitTypes.forEach(fruit => {
+        fruit.image = new Image();
+        fruit.image.src = `assets/${fruit.name}.png`;
+    });
     
     // Set canvas dimensions
     resizeCanvas();
@@ -250,10 +261,15 @@ function updateFruits(deltaTime) {
         fruit.y += fruit.speed * (deltaTime / 16); // Normalize for 60fps
         
         // Draw fruit
-        ctx.fillStyle = fruit.type.color;
-        ctx.beginPath();
-        ctx.arc(fruit.x + FRUIT_SIZE/2, fruit.y + FRUIT_SIZE/2, FRUIT_SIZE/2, 0, Math.PI * 2);
-        ctx.fill();
+        if (fruit.type.image && fruit.type.image.complete) {
+            ctx.drawImage(fruit.type.image, fruit.x, fruit.y, FRUIT_SIZE, FRUIT_SIZE);
+        } else {
+            // Fallback to colored circle if image isn't loaded
+            ctx.fillStyle = fruit.type.color;
+            ctx.beginPath();
+            ctx.arc(fruit.x + FRUIT_SIZE/2, fruit.y + FRUIT_SIZE/2, FRUIT_SIZE/2, 0, Math.PI * 2);
+            ctx.fill();
+        }
         
         // Check for collision with basket
         if (checkCollision(fruit, basket)) {
@@ -338,9 +354,19 @@ function updateLivesDisplay() {
     
     // Create heart icons based on current lives
     for (let i = 0; i < lives; i++) {
-        const heartIcon = document.createElement('div');
-        heartIcon.className = 'life-icon';
-        livesContainer.appendChild(heartIcon);
+        if (heartImage && heartImage.complete) {
+            const heartImg = document.createElement('img');
+            heartImg.src = 'assets/heart.png';
+            heartImg.className = 'life-icon';
+            heartImg.width = 25;
+            heartImg.height = 25;
+            livesContainer.appendChild(heartImg);
+        } else {
+            // Fallback to CSS heart if image isn't loaded
+            const heartIcon = document.createElement('div');
+            heartIcon.className = 'life-icon';
+            livesContainer.appendChild(heartIcon);
+        }
     }
 }
 
