@@ -5,8 +5,11 @@ const BASKET_WIDTH = 100;
 const BASKET_HEIGHT = 80;
 const FRUIT_SIZE = 50;
 const GRAVITY = 0.2;
-const MAX_FRUIT_SPEED = 5;
-const SPAWN_INTERVAL = 1500; // milliseconds between fruit spawns
+const INITIAL_MAX_FRUIT_SPEED = 2; // Reduced initial speed
+const MAX_POSSIBLE_FRUIT_SPEED = 8; // Maximum possible speed after difficulty increases
+const INITIAL_SPAWN_INTERVAL = 2000; // Longer initial spawn interval (milliseconds)
+const MIN_SPAWN_INTERVAL = 500; // Minimum spawn interval after difficulty increases
+const DIFFICULTY_INCREASE_INTERVAL = 10000; // Increase difficulty every 10 seconds
 
 // Game variables
 let canvas, ctx;
@@ -18,12 +21,22 @@ let basket = {
     y: 0,
     width: BASKET_WIDTH,
     height: BASKET_HEIGHT,
-    speed: 10
+    speed: 15
 };
 let fruits = [];
 let spawnTimer;
 let animationId;
 let lastTime = 0;
+let gameTimer = 0; // Track total game time
+let currentMaxFruitSpeed = INITIAL_MAX_FRUIT_SPEED; // Current maximum fruit speed
+let currentSpawnInterval = INITIAL_SPAWN_INTERVAL; // Current spawn interval
+let difficultyLevel = 1; // Track difficulty level
+
+// Key state tracking
+let keys = {
+    ArrowLeft: false,
+    ArrowRight: false
+};
 
 // Fruit types with different point values
 const fruitTypes = [
@@ -49,6 +62,7 @@ window.onload = function() {
     
     // Keyboard controls
     window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
     
     // Touch controls
     canvas.addEventListener('touchmove', handleTouchMove);
@@ -83,6 +97,10 @@ function startGame() {
     lives = 3;
     fruits = [];
     gameActive = true;
+    gameTimer = 0; // Reset game timer
+    currentMaxFruitSpeed = INITIAL_MAX_FRUIT_SPEED; // Reset difficulty
+    currentSpawnInterval = INITIAL_SPAWN_INTERVAL;
+    difficultyLevel = 1;
     
     // Update UI
     document.getElementById('score').textContent = score;
@@ -92,7 +110,7 @@ function startGame() {
     
     // Start spawning fruits
     clearInterval(spawnTimer);
-    spawnTimer = setInterval(spawnFruit, SPAWN_INTERVAL);
+    spawnTimer = setInterval(spawnFruit, currentSpawnInterval);
     
     // Start game loop
     cancelAnimationFrame(animationId);
@@ -106,10 +124,17 @@ function gameLoop(timestamp) {
     const deltaTime = timestamp - lastTime;
     lastTime = timestamp;
     
+    // Update game timer and check for difficulty increase
+    gameTimer += deltaTime;
+    updateDifficulty();
+    
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Update and draw basket
+    // Update basket position based on key states
+    updateBasketPosition(deltaTime);
+    
+    // Draw basket
     drawBasket();
     
     // Update and draw fruits
@@ -119,6 +144,52 @@ function gameLoop(timestamp) {
     if (gameActive) {
         animationId = requestAnimationFrame(gameLoop);
     }
+}
+
+// Update difficulty based on game timer
+function updateDifficulty() {
+    // Check if it's time to increase difficulty
+    const newDifficultyLevel = Math.floor(gameTimer / DIFFICULTY_INCREASE_INTERVAL) + 1;
+    
+    // If difficulty level has increased
+    if (newDifficultyLevel > difficultyLevel) {
+        difficultyLevel = newDifficultyLevel;
+        
+        // Increase max fruit speed (with a cap)
+        currentMaxFruitSpeed = Math.min(
+            INITIAL_MAX_FRUIT_SPEED + (difficultyLevel - 1) * 0.5,
+            MAX_POSSIBLE_FRUIT_SPEED
+        );
+        
+        // Decrease spawn interval (with a minimum)
+        currentSpawnInterval = Math.max(
+            INITIAL_SPAWN_INTERVAL - (difficultyLevel - 1) * 150,
+            MIN_SPAWN_INTERVAL
+        );
+        
+        // Update spawn timer with new interval
+        clearInterval(spawnTimer);
+        spawnTimer = setInterval(spawnFruit, currentSpawnInterval);
+        
+        console.log(`Difficulty increased to level ${difficultyLevel}. Speed: ${currentMaxFruitSpeed}, Interval: ${currentSpawnInterval}ms`);
+    }
+}
+
+// Update basket position based on key states
+function updateBasketPosition(deltaTime) {
+    if (!gameActive) return;
+    
+    // Normalize movement speed with deltaTime for consistent speed across different frame rates
+    const moveAmount = basket.speed * (deltaTime / 16); // Normalize for 60fps
+    
+    if (keys.ArrowLeft) {
+        basket.x -= moveAmount;
+    }
+    if (keys.ArrowRight) {
+        basket.x += moveAmount;
+    }
+    
+    keepBasketInBounds();
 }
 
 // Draw the basket
@@ -141,7 +212,7 @@ function spawnFruit() {
         y: -FRUIT_SIZE,
         width: FRUIT_SIZE,
         height: FRUIT_SIZE,
-        speed: 1 + Math.random() * MAX_FRUIT_SPEED,
+        speed: 1 + Math.random() * currentMaxFruitSpeed, // Use current max speed based on difficulty
         type: fruitType
     };
     
@@ -196,10 +267,17 @@ function checkCollision(obj1, obj2) {
 function handleKeyDown(e) {
     if (!gameActive) return;
     
-    if (e.key === 'ArrowLeft') {
-        moveBasket(-basket.speed);
-    } else if (e.key === 'ArrowRight') {
-        moveBasket(basket.speed);
+    // Update key state
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        keys[e.key] = true;
+        e.preventDefault(); // Prevent scrolling when using arrow keys
+    }
+}
+
+// Handle key release
+function handleKeyUp(e) {
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        keys[e.key] = false;
     }
 }
 
@@ -220,12 +298,6 @@ function handleTouchMove(e) {
 // Handle touch start
 function handleTouchStart(e) {
     e.preventDefault();
-}
-
-// Move basket
-function moveBasket(dx) {
-    basket.x += dx;
-    keepBasketInBounds();
 }
 
 // Keep basket within canvas bounds
