@@ -21,7 +21,8 @@ let basket = {
     y: 0,
     width: BASKET_WIDTH,
     height: BASKET_HEIGHT,
-    speed: 15
+    speed: 15,
+    image: null // Will hold the basket image
 };
 let fruits = [];
 let spawnTimer;
@@ -35,7 +36,9 @@ let difficultyLevel = 1; // Track difficulty level
 // Key state tracking
 let keys = {
     ArrowLeft: false,
-    ArrowRight: false
+    ArrowRight: false,
+    ArrowUp: false,
+    ArrowDown: false
 };
 
 // Fruit types with different point values
@@ -51,6 +54,10 @@ const fruitTypes = [
 window.onload = function() {
     canvas = document.getElementById('gameCanvas');
     ctx = canvas.getContext('2d');
+    
+    // Load basket image
+    basket.image = new Image();
+    basket.image.src = 'assets/basket.png';
     
     // Set canvas dimensions
     resizeCanvas();
@@ -191,18 +198,30 @@ function updateBasketPosition(deltaTime) {
     if (keys.ArrowRight) {
         basket.x += moveAmount;
     }
+    if (keys.ArrowUp) {
+        basket.y -= moveAmount;
+    }
+    if (keys.ArrowDown) {
+        basket.y += moveAmount;
+    }
     
     keepBasketInBounds();
 }
 
 // Draw the basket
 function drawBasket() {
-    ctx.fillStyle = 'brown';
-    ctx.fillRect(basket.x, basket.y, basket.width, basket.height);
-    
-    // Draw basket handle/details
-    ctx.fillStyle = 'saddlebrown';
-    ctx.fillRect(basket.x + 10, basket.y - 10, basket.width - 20, 10);
+    if (basket.image && basket.image.complete) {
+        // Draw the image if it's loaded
+        ctx.drawImage(basket.image, basket.x, basket.y, basket.width, basket.height);
+    } else {
+        // Fallback to rectangle if image isn't loaded yet
+        ctx.fillStyle = 'brown';
+        ctx.fillRect(basket.x, basket.y, basket.width, basket.height);
+        
+        // Draw basket handle/details
+        ctx.fillStyle = 'saddlebrown';
+        ctx.fillRect(basket.x + 10, basket.y - 10, basket.width - 20, 10);
+    }
 }
 
 // Spawn a new fruit
